@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Episodes{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Episodes</h1>
+    <form method="POST" action="{{ url_for('episodes') }}" class="mb-4">
+        <div class="form-group">
+            <label for="name">Episode Name:</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" class="form-control"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Episode</button>
+    </form>
+    <h2>Select Episode</h2>
+    <ul class="list-group">
+        {% for episode in episodes %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ episode.name }}</strong> - {{ episode.description }}
+                </div>
+                <div>
+                    <form method="POST" action="{{ url_for('select_episode', episode_id=episode.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-secondary btn-sm">Select</button>
+                    </form>
+                    {% if current_user.is_admin %}
+                    <form method="POST" action="{{ url_for('delete_episode', episode_id=episode.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Reddit Posts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .progress-bar {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            display: none; /* Hidden by default */
+        }
+
+        .progress-bar-inner {
+            height: 20px;
+            width: 0;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+    </style>
+    <script>
+        function showProgressBar() {
+            var progressBar = document.getElementById('progress-bar');
+            var progressBarInner = document.getElementById('progress-bar-inner');
+            progressBar.style.display = 'block';
+            var width = 0;
+            var interval = setInterval(function() {
+                if (width >= 100) {
+                    clearInterval(interval);
+                } else {
+                    width++;
+                    progressBarInner.style.width = width + '%';
+                    progressBarInner.innerHTML = width + '%';
+                }
+            }, 50);
+        }
+
+        function searchPosts(event) {
+            event.preventDefault();
+            showProgressBar();
+            var form = document.getElementById('search-form');
+            form.submit();
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Search Reddit Posts</h1>
+        <form id="search-form" method="POST" action="{{ url_for('search_reddit_posts') }}" onsubmit="searchPosts(event)">
+            <label for="subreddit">Subreddit:</label>
+            <input type="text" id="subreddit" name="subreddit" required>
+            <br>
+            <label for="query">Search Query:</label>
+            <input type="text" id="query" name="query">
+            <br>
+            <label for="time_period">Time Period:</label>
+            <select id="time_period" name="time_period">
+                <option value="hour">Hour</option>
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+                <option value="all">All</option>
+                <option value="custom">Custom</option>
+            </select>
+            <br>
+            <div id="custom_date_range" style="display: none;">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date">
+                <br>
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date">
+            </div>
+            <label for="limit">Number of Posts:</label>
+            <input type="number" id="limit" name="limit" value="10" min="1" required>
+            <br>
+            <button type="submit">Search Posts</button>
+        </form>
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-bar-inner" id="progress-bar-inner">0%</div>
+        </div>
+        <a href="{{ url_for('dashboard') }}">Return to Dashboard</a>
+    </div>
+    <script>
+        document.getElementById('time_period').addEventListener('change', function() {
+            var customDateRange = document.getElementById('custom_date_range');
+            if (this.value === 'custom') {
+                customDateRange.style.display = 'block';
+            } else {
+                customDateRange.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

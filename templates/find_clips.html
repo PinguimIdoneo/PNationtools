@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Clips by Name</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Find Clips by Name</h1>
+        <form method="POST" action="{{ url_for('find_clips') }}">
+            <label for="subreddit">Subreddit:</label>
+            <input type="text" id="subreddit" name="subreddit" required>
+            <br>
+            <label for="titles">Clip Titles:</label>
+            <textarea id="titles" name="titles" rows="10" required></textarea>
+            <br>
+            <label for="time_period">Time Period:</label>
+            <select id="time_period" name="time_period">
+                <option value="hour">Hour</option>
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+                <option value="all">All</option>
+            </select>
+            <br>
+            <button type="submit">Find Clips</button>
+        </form>
+        <a href="{{ url_for('dashboard') }}">Return to Dashboard</a>
+    </div>
+</body>
+</html>

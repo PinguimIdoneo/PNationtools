@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Generator for {{ episode.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .progress-bar {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            display: none; /* Hidden by default */
+        }
+
+        .progress-bar-inner {
+            height: 20px;
+            width: 0;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+    </style>
+    <script>
+        function showProgressBar() {
+            var progressBar = document.getElementById('progress-bar');
+            var progressBarInner = document.getElementById('progress-bar-inner');
+            progressBar.style.display = 'block';
+            var width = 0;
+            var interval = setInterval(function() {
+                if (width >= 100) {
+                    clearInterval(interval);
+                } else {
+                    width++;
+                    progressBarInner.style.width = width + '%';
+                    progressBarInner.innerHTML = width + '%';
+                }
+            }, 50);
+        }
+
+        function generateUsernames(event) {
+            event.preventDefault();
+            showProgressBar();
+            var form = document.getElementById('credits-form');
+            form.submit();
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Credit Generator for {{ episode.name }}</h1>
+        <form id="credits-form" method="POST" action="{{ url_for('credits_generator') }}" onsubmit="generateUsernames(event)">
+            <textarea name="input_text" rows="10" cols="50" placeholder="Paste the timeline text here..."></textarea><br>
+            <button type="submit">Generate Usernames</button>
+            <a href="{{ url_for('dashboard') }}">Return to Dashboard</a>
+        </form>
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-bar-inner" id="progress-bar-inner">0%</div>
+        </div>
+        {% if usernames %}
+            <h2>Generated Usernames</h2>
+            <button onclick="copyUsernamesToClipboard()">Copy Usernames to Clipboard</button>
+            <ul>
+                {% for username in usernames %}
+                    <li>{{ username }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <script>
+        function copyUsernamesToClipboard() {
+            var text = "";
+            {% for username in usernames %}
+                text += "{{ username }}\n";
+            {% endfor %}
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Usernames copied to clipboard!');
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    </script>
+</body>
+</html>

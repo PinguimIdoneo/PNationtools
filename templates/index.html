@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}PNation Tools{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>PNation Tools</h1>
+    <ul>
+        <li><a href="{{ url_for('search_reddit_posts') }}">Find Top Posts</a></li>
+        <li><a href="{{ url_for('extract_usernames') }}">Extract Reddit Usernames</a></li>
+        <li><a href="{{ url_for('find_clips') }}">Find Clips by Name</a></li>
+        <li><a href="{{ url_for('view_history') }}">View Search History</a></li>
+        <li><a href="{{ url_for('matching_tool') }}">Matching Tool</a></li>
+        {% if current_user.is_admin %}
+            <li><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+</div>
+{% endblock %}

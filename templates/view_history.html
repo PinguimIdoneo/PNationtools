@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search History for Episode: {{ episode.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .menu {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .menu a {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 18px;
+            margin: 10px;
+        }
+        .menu a:hover {
+            background-color: #0056b3;
+        }
+        .history-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .copy-button, .delete-button, .toggle-button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .delete-button {
+            background-color: #dc3545;
+        }
+        .toggle-button {
+            background-color: #007bff;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        .toggle-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Search History for Episode: {{ episode.name }}</h1>
+        {% if search_history %}
+            <div id="history-list">
+                {% for history in search_history %}
+                    <div class="history-item">
+                        <strong>Subreddit:</strong> {{ history.subreddit }}<br>
+                        <strong>Query:</strong> {{ history.query or 'None' }}<br>
+                        <strong>Time Period:</strong> {{ history.time_period }}<br>
+                        <strong>Search Date:</strong> {{ history.date }}<br>
+                        <button class="toggle-button" onclick="toggleLinks('{{ history.id }}')">Show/Hide Links</button>
+                        <button class="copy-button" onclick="copyLinksToClipboard('{{ history.id }}')">Copy Links</button>
+                        <form method="post" action="/delete_history/{{ history.id }}" style="display:inline;">
+                            <button type="submit" class="delete-button">Delete</button>
+                        </form>
+                        <ul id="links-{{ history.id }}" style="display:none;">
+                            {% for title, link in history.results %}
+                                <li><a href="{{ link }}" target="_blank">{{ title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No search history available for this episode.</p>
+        {% endif %}
+        <div class="menu">
+            <a href="{{ url_for('dashboard') }}">Return to Dashboard</a>
+        </div>
+    </div>
+    <script>
+        function toggleLinks(historyId) {
+            var linksList = document.getElementById('links-' + historyId);
+            if (linksList.style.display === 'none') {
+                linksList.style.display = 'block';
+            } else {
+                linksList.style.display = 'none';
+            }
+        }
+
+        function copyLinksToClipboard(historyId) {
+            fetch(`/copy_links/${historyId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.links) {
+                    const tempInput = document.createElement("textarea");
+                    tempInput.value = data.links;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(tempInput);
+                    alert("Links copied to clipboard!");
+                } else {
+                    alert("No links found to copy.");
+                }
+            })
+            .catch(error => {
+                console.error('Error copying links:', error);
+                alert("Failed to copy links.");
+            });
+        }
+    </script>
+</body>
+</html>

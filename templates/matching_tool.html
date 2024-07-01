@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matching Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .percentage-green {
+            color: green;
+        }
+        .percentage-orange {
+            color: orange;
+        }
+        .percentage-red {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Matching Links</h1>
+        {% if matching_links %}
+            <p>{{ matched_clips }} out of {{ total_clips }} clips match previous episodes 
+                <span class="
+                    {% if match_percentage <= 20 %}
+                        percentage-green
+                    {% elif match_percentage <= 50 %}
+                        percentage-orange
+                    {% else %}
+                        percentage-red
+                    {% endif %}
+                ">{{ match_percentage }}%</span>.
+            </p>
+            <ul>
+                {% for title, link, episode_name in matching_links %}
+                    <li>
+                        <a href="{{ link }}" target="_blank">{{ title }}</a> (from episode {{ episode_name }})
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No matching links found in previous episodes.</p>
+        {% endif %}
+        <div class="menu">
+            <a href="{{ url_for('dashboard') }}">Return to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

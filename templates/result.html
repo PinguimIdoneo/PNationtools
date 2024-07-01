@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Reddit Usernames</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .menu {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .menu a {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 18px;
+            margin: 10px;
+        }
+        .menu a:hover {
+            background-color: #0056b3;
+        }
+        .copy-button {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 10px;
+            width: 60px;
+            text-align: center;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
+        .copied {
+            background-color: #ffc107;
+        }
+        .result-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .result-item span {
+            word-break: break-all;
+            white-space: normal;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+        .search-bar {
+            margin: 20px 0;
+        }
+        .loading-spinner {
+            display: none;
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Extract Reddit Usernames</h1>
+        <form id="usernameForm" action="/extract_usernames" method="post">
+            <label for="reddit_links">Reddit Links (one per line):</label>
+            <textarea id="reddit_links" name="reddit_links" rows="10" required>{{ reddit_links }}</textarea>
+            <button type="submit">Extract Usernames</button>
+        </form>
+        <div class="loading-spinner" id="loadingSpinner"></div>
+        {% if usernames %}
+            <div class="results">
+                <h2>Extracted Usernames</h2>
+                <input type="text" id="searchBar" class="search-bar" onkeyup="highlightText()" placeholder="Search for usernames...">
+                <ol id="usernameList">
+                    {% for result in usernames %}
+                        <li class="result-item">
+                            <button class="copy-button" onclick="copyToClipboard('{{ result.username }}', this)">Copy</button>
+                            <span>{{ result.username }}: {{ result.link }}</span>
+                        </li>
+                    {% endfor %}
+                </ol>
+            </div>
+        {% elif error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <div class="menu">
+            <a href="{{ url_for('dashboard') }}">Return to Dashboard</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('usernameForm').addEventListener('submit', function() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+        });
+
+        function copyToClipboard(text, button) {
+            var tempInput = document.createElement("input");
+            tempInput.style.position = "absolute";
+            tempInput.style.left = "-9999px";
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            button.classList.add("copied");
+            button.textContent = "Copied";
+        }
+
+        function highlightText() {
+            var searchBar = document.getElementById('searchBar');
+            var filter = searchBar.value.toUpperCase();
+            var ul = document.getElementById("usernameList");
+            var li = ul.getElementsByTagName('li');
+
+            for (var i = 0; i < li.length; i++) {
+                var span = li[i].getElementsByTagName("span")[0];
+                var textValue = span.textContent || span.innerText;
+                if (textValue.toUpperCase().indexOf(filter) > -1) {
+                    li[i].style.display = "";
+                    var innerHTML = span.innerHTML;
+                    var index = innerHTML.toUpperCase().indexOf(filter);
+                    if (index >= 0) { 
+                        innerHTML = innerHTML.substring(0, index) + "<span class='highlight'>" + innerHTML.substring(index, index + filter.length) + "</span>" + innerHTML.substring(index + filter.length);
+                        span.innerHTML = innerHTML;
+                    }
+                } else {
+                    li[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

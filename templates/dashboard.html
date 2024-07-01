@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Dashboard for Episode: {{ episode.name }}</h1>
+    <div class="list-group">
+        <a href="{{ url_for('search_reddit_posts') }}" class="list-group-item list-group-item-action">Find Top Posts</a>
+        <a href="{{ url_for('extract_usernames') }}" class="list-group-item list-group-item-action">Extract Reddit Usernames</a>
+        <a href="{{ url_for('find_clips') }}" class="list-group-item list-group-item-action">Find Clips by Name</a>
+        <a href="{{ url_for('view_history') }}" class="list-group-item list-group-item-action">View Search History</a>
+        <a href="{{ url_for('matching_tool') }}" class="list-group-item list-group-item-action">Matching Tool</a>
+        <a href="{{ url_for('credits_generator') }}" class="list-group-item list-group-item-action">Credits Generator</a>
+        <a href="{{ url_for('episodes') }}" class="list-group-item list-group-item-action">Return to Home Page</a>
+    </div>
+</div>
+{% endblock %}
