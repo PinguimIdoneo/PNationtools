@@ -19,9 +19,12 @@ import unicodedata
 # Load environment variables from .env file
 load_dotenv()
 
+# Initialize the Flask app
 app = Flask(__name__)
 
-app.config.from_object(DefaultConfig)
+# Select the configuration class based on the environment variable
+config_name = os.getenv('FLASK_CONFIG', 'default')
+app.config.from_object(f'config.{config[config_name].__name__}')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -34,6 +37,7 @@ bcrypt = Bcrypt(app)
 reddit = praw.Reddit(client_id=os.getenv('REDDIT_CLIENT_ID'),
                      client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
                      user_agent=os.getenv('REDDIT_USER_AGENT'))
+
 
 # Initialize the cache
 cache = Cache(Cache.MEMORY)
