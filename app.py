@@ -4,10 +4,8 @@ import asyncio
 from datetime import datetime
 from functools import wraps
 from flask_login import UserMixin
-from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
@@ -22,8 +20,10 @@ import unicodedata
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+
+# Load the configuration from config.py based on the FLASK_ENV environment variable
+env = os.getenv('FLASK_ENV', 'default')
+app.config.from_object(f'config.{env.capitalize()}Config')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -438,7 +438,6 @@ def view_history():
     sorted_history = sorted(filtered_history, key=lambda x: datetime.strptime(x.date, '%Y-%m-%d %H:%M:%S'), reverse=True)
     return render_template('view_history.html', search_history=sorted_history, episode=episode)
 
-
 @app.route('/delete_history/<uuid:history_id>', methods=['POST'])
 @login_required
 def delete_history(history_id):
@@ -477,7 +476,6 @@ def credits_generator():
         print(f"Generated usernames: {usernames}")  # Debug statement
     
     return render_template('credits_generator.html', usernames=usernames, episode=episode)
-
 
 def extract_clip_names(input_text):
     lines = input_text.split('\n')
@@ -525,7 +523,6 @@ def clean_text(text):
 
 # Rest of the app code remains unchanged
 
-
 @app.route('/matching_tool')
 @login_required
 def matching_tool():
@@ -559,7 +556,6 @@ def matching_tool():
     matching_links_with_names = [(title, link, episode_names[episode_id]) for title, link, episode_id in valid_matching_links]
 
     return render_template('matching_tool.html', matching_links=matching_links_with_names, matched_clips=matched_clips, total_clips=total_clips, match_percentage=match_percentage)
-
 
 @app.route('/admin')
 @admin_required
