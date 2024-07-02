@@ -21,9 +21,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Load the configuration from config.py based on the FLASK_ENV environment variable
-env = os.getenv('FLASK_ENV', 'default')
-app.config.from_object(f'config.{env.capitalize()}Config')
+app.config.from_object(DefaultConfig)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
