@@ -46,9 +46,6 @@ HISTORY_FILE = 'search_history.json'
 # Global variable to store search history
 search_history = []
 
-# The rest of your app code
-
-
 class SearchHistoryEntry:
     def __init__(self, id, episode_id, user_id, subreddit, query, time_period, start_date, end_date, results, date):
         self.id = id
@@ -138,7 +135,8 @@ def save_history():
         json.dump([entry.to_dict() for entry in search_history], file, indent=4)
 
 # Load the search history at startup
-load_history()
+with app.app_context():
+    load_history()
 
 def log_activity(user_id, action, details=None):
     activity = ActivityLog(user_id=user_id, action=action, details=details)
