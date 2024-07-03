@@ -13,7 +13,7 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///testing.db'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://pnationtools_user:cBbTguDKychOxL38ThBPillXNSPUXWHz@dpg-cq27gd56l47c73b124l0-a/pnationtools'
 
 class ProductionConfig(Config):
     DEBUG = False
@@ -26,3 +26,4 @@ config = {
     'production': ProductionConfig,
     'default': DevelopmentConfig
 }
+
