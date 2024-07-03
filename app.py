@@ -46,6 +46,9 @@ HISTORY_FILE = 'search_history.json'
 # Global variable to store search history
 search_history = []
 
+# The rest of your app code
+
+
 class SearchHistoryEntry:
     def __init__(self, id, episode_id, user_id, subreddit, query, time_period, start_date, end_date, results, date):
         self.id = id
