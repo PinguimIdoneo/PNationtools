@@ -21,8 +21,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Using the correct configuration object
-from config.default import ProductionConfig
+# Importing the correct configuration class from config.py
+from config import ProductionConfig
 app.config.from_object(ProductionConfig)
 
 db = SQLAlchemy(app)
