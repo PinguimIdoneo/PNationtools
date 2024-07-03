@@ -27,4 +27,4 @@ update-checker==0.18.0
 urllib3==2.2.2
 websocket-client==1.8.0
 Werkzeug==3.0.3
-psycopg2-binary==2.9.1
+psycopg2==2.9.7  # Replace psycopg2-binary with psycopg2
