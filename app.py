@@ -15,17 +15,14 @@ from dotenv import load_dotenv
 import uuid
 import re
 import unicodedata
-from config.config import config  # Import the config dictionary
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Initialize the Flask app
 app = Flask(__name__)
 
-# Select the configuration class based on the environment variable
-config_name = os.getenv('FLASK_CONFIG', 'default')
-app.config.from_object(config[config_name])
+# Using the correct configuration object
+app.config.from_object('config.ProductionConfig')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -33,11 +30,6 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 bcrypt = Bcrypt(app)
-
-# Initialize the Reddit API client
-reddit = praw.Reddit(client_id=os.getenv('REDDIT_CLIENT_ID'),
-                     client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
-                     user_agent=os.getenv('REDDIT_USER_AGENT'))
 
 
 # Initialize the Reddit API client
