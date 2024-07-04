@@ -1,16 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rename Episode</title>
-</head>
-<body>
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
     <h1>Rename Episode</h1>
     <form method="POST">
-        <label for="name">New Episode Name:</label>
-        <input type="text" name="name" id="name" value="{{ episode.name }}" required>
-        <button type="submit">Rename</button>
+        <div class="mb-3">
+            <label for="name" class="form-label">New Episode Name</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ episode.name }}" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Rename</button>
+        <a href="{{ url_for('episodes') }}" class="btn btn-secondary">Cancel</a>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}
