@@ -20,7 +20,7 @@
         <div class="card-body">
             <h5 class="card-title">{{ episode.name }}</h5>
             <p class="card-text">{{ episode.description }}</p>
-            <p class="card-text"><small class="text-muted">{{ episode.created_at }}</small></p>
+            <p class="card-text"><small class="text-muted">{{ episode.created_at.strftime('%d-%m-%Y')  }}</small></p>
             <form action="{{ url_for('select_episode', episode_id=episode.id) }}" method="POST" class="d-inline">
                 <button type="submit" class="btn btn-info">Select</button>
             </form>
