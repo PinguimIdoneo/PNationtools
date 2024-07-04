@@ -122,16 +122,15 @@ def load_user(user_id):
 
 def load_history():
     """Load search history from the JSON file."""
-    global search_history
+    history = []
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, 'r') as file:
             history_data = json.load(file)
-            search_history = [SearchHistoryEntry(**entry) for entry in history_data]
-    else:
-        search_history = []
+            history = [SearchHistoryEntry(**entry) for entry in history_data]
+    return history
 
 def save_history():
-    """Save search history to the JSON file."""
+    global search_history
     with open(HISTORY_FILE, 'w') as file:
         json.dump([entry.to_dict() for entry in search_history], file, indent=4)
 
@@ -448,6 +447,7 @@ def view_history():
     
     episode_id = session['episode_id']
     episode = Episode.query.get_or_404(episode_id)
+    search_history = load_history()  # Load the latest search history
     filtered_history = [entry for entry in search_history if entry.episode_id == episode_id]
     sorted_history = sorted(filtered_history, key=lambda x: datetime.strptime(x.date, '%Y-%m-%d %H:%M:%S'), reverse=True)
     return render_template('view_history.html', search_history=sorted_history, episode=episode)
