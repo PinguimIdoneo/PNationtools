@@ -46,6 +46,7 @@ HISTORY_FILE = 'search_history.json'
 # Global variable to store search history
 search_history = []
 
+# Class definitions
 class SearchHistoryEntry:
     def __init__(self, id, episode_id, user_id, subreddit, query, time_period, start_date, end_date, results, date):
         self.id = id
@@ -125,7 +126,7 @@ def load_history():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, 'r') as file:
             history_data = json.load(file)
-            search_history.extend(SearchHistoryEntry(**entry) for entry in history_data)
+            search_history = [SearchHistoryEntry(**entry) for entry in history_data]
     else:
         search_history = []
 
@@ -135,8 +136,7 @@ def save_history():
         json.dump([entry.to_dict() for entry in search_history], file, indent=4)
 
 # Load the search history at startup
-with app.app_context():
-    load_history()
+load_history()
 
 def log_activity(user_id, action, details=None):
     activity = ActivityLog(user_id=user_id, action=action, details=details)
@@ -477,7 +477,6 @@ def credits_generator():
         print(f"Generated usernames: {usernames}")  # Debug statement
     
     return render_template('credits_generator.html', usernames=usernames, episode=episode)
-
 def extract_clip_names(input_text):
     lines = input_text.split('\n')
     clip_names = []
@@ -521,8 +520,6 @@ def clean_text(text):
     text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
     text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
     return text.strip()
-
-# Rest of the app code remains unchanged
 
 @app.route('/matching_tool')
 @login_required
