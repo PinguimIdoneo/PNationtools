@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rename Episode</title>
+</head>
+<body>
+    <h1>Rename Episode</h1>
+    <form method="POST">
+        <label for="name">New Episode Name:</label>
+        <input type="text" name="name" id="name" value="{{ episode.name }}" required>
+        <button type="submit">Rename</button>
+    </form>
+</body>
+</html>
