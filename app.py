@@ -231,8 +231,21 @@ def episodes():
         db.session.commit()
         flash('Episode created successfully', 'success')
         return redirect(url_for('episodes'))
-    episodes = Episode.query.all()
+    episodes = Episode.query.order_by(Episode.created_at.desc()).all()
     return render_template('episodes.html', episodes=episodes)
+
+@app.route('/rename_episode/<int:episode_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def rename_episode(episode_id):
+    episode = Episode.query.get_or_404(episode_id)
+    if request.method == 'POST':
+        new_name = request.form.get('name')
+        episode.name = new_name
+        db.session.commit()
+        flash(f'Episode has been renamed to {new_name}.', 'success')
+        return redirect(url_for('episodes'))
+    return render_template('rename_episode.html', episode=episode)
 
 @app.route('/delete_episode/<int:episode_id>', methods=['POST'])
 @login_required
