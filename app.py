@@ -41,13 +41,13 @@ reddit = praw.Reddit(client_id=os.getenv('REDDIT_CLIENT_ID'),
 cache = Cache(Cache.MEMORY)
 
 # File path for storing search history
-HISTORY_FILE = 'search_history.json'
+HISTORY_FILE = '_history.json'
 
 # Global variable to store search history
-search_history = []
+_history = []
 
 # Class definitions
-class SearchHistoryEntry:
+class HistoryEntry:
     def __init__(self, id, episode_id, user_id, subreddit, query, time_period, start_date, end_date, results, date):
         self.id = id
         self.episode_id = episode_id
@@ -126,13 +126,15 @@ def load_history():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, 'r') as file:
             history_data = json.load(file)
-            history = [SearchHistoryEntry(**entry) for entry in history_data]
+            history = [HistoryEntry(**entry) for entry in history_data]
+    global _history
+    _history = history
     return history
 
 def save_history():
-    global search_history
+    global _history
     with open(HISTORY_FILE, 'w') as file:
-        json.dump([entry.to_dict() for entry in search_history], file, indent=4)
+        json.dump([entry.to_dict() for entry in _history], file, indent=4)
 
 # Load the search history at startup
 load_history()
@@ -294,7 +296,7 @@ def fetch_posts(subreddit, query, time_period, after, limit):
 
 def find_matching_links(current_links, current_episode_id):
     matching_links = []
-    for entry in search_history:
+    for entry in _history:
         if entry.episode_id != current_episode_id:
             for title, link in entry.results:
                 if link in current_links:
@@ -312,7 +314,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     episode_id = session['episode_id']
     
     subreddit = reddit.subreddit(subreddit_name)
-    searched_posts = []
+    ed_posts = []
     fetch_limit = max(limit * 5, 100)  # Fetch more to ensure we have enough for filtering
 
     if time_period == 'custom':
@@ -326,7 +328,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
 
-        while len(searched_posts) < limit:
+        while len(ed_posts) < limit:
             fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, fetch_limit)
 
             if not fetched_batch:
@@ -337,8 +339,8 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
 
             for post in fetched_batch:
                 if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp:
-                    searched_posts.append(post)
-                    if len(searched_posts) == limit:
+                    ed_posts.append(post)
+                    if len(ed_posts) == limit:
                         break
 
             after = fetched_batch[-1].fullname if fetched_batch else None
@@ -347,8 +349,8 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
                 break
     else:
         after = None
-        while len(searched_posts) < limit:
-            remaining_limit = min(100, limit - len(searched_posts))
+        while len(ed_posts) < limit:
+            remaining_limit = min(100, limit - len(ed_posts))
             fetched_batch = fetch_posts(subreddit, query, time_period, after, remaining_limit)
 
             if not fetched_batch:
@@ -356,13 +358,13 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
 
             for post in fetched_batch:
                 if is_video_post(post):
-                    searched_posts.append(post)
+                    ed_posts.append(post)
 
             after = fetched_batch[-1].fullname if fetched_batch else None
 
-    link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in searched_posts[:limit]]
+    link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in ed_posts[:limit]]
     
-    search_data = {
+    _data = {
         'id': str(uuid.uuid4()),
         'episode_id': episode_id,
         'user_id': current_user.id,
@@ -374,10 +376,10 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         'results': link_list,
         'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
-    search_history.append(SearchHistoryEntry(**search_data))
+    _history.append(HistoryEntry(**_data))
     save_history()
 
-    log_activity(current_user.id, 'search', details=f'Subreddit: {subreddit_name}, Query: {query}, Time Period: {time_period}, Results: {len(link_list)} links')
+    log_activity(current_user.id, 'search_posts', details=f'Subreddit: {subreddit_name}, Query: {query}, Time Period: {time_period}, Results: {len(link_list)} links')
 
     return link_list
 
@@ -455,16 +457,16 @@ def view_history():
 @app.route('/delete_history/<uuid:history_id>', methods=['POST'])
 @login_required
 def delete_history(history_id):
-    global search_history
-    search_history = [entry for entry in search_history if entry.id != str(history_id)]
+    global _history
+    _history = [entry for entry in _history if entry.id != str(history_id)]
     save_history()
     return redirect(url_for('view_history'))
 
 @app.route('/copy_links/<uuid:history_id>', methods=['POST'])
 @login_required
 def copy_links(history_id):
-    global search_history
-    entry = next((entry for entry in search_history if entry.id == str(history_id)), None)
+    global _history
+    entry = next((entry for entry in _history if entry.id == str(history_id)), None)
     if entry:
         links = "\n".join([link for title, link in entry.results])
         return jsonify({"links": links})
@@ -490,6 +492,7 @@ def credits_generator():
         print(f"Generated usernames: {usernames}")  # Debug statement
     
     return render_template('credits_generator.html', usernames=usernames, episode=episode)
+
 def extract_clip_names(input_text):
     lines = input_text.split('\n')
     clip_names = []
@@ -509,7 +512,7 @@ def generate_credits(clip_names):
 
 def find_usernames_for_clip(clip_name):
     matched_usernames = []
-    for entry in search_history:
+    for entry in _history:
         for title, link in entry.results:
             cleaned_title = clean_text(title)  # Clean the title
             if clip_name.lower() in cleaned_title.lower():  # Case-insensitive match
@@ -542,7 +545,7 @@ def matching_tool():
         return redirect(url_for('episodes'))
 
     episode_id = session['episode_id']
-    current_searches = [search for search in search_history if search.episode_id == episode_id]
+    current_searches = [search for search in _history if search.episode_id == episode_id]
     current_links = [link for search in current_searches for title, link in search.results]
     
     matching_links = find_matching_links(current_links, episode_id)
