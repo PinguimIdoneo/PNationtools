@@ -315,6 +315,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     episode_id = session['episode_id']
     subreddit = reddit.subreddit(subreddit_name)
     ed_posts = []
+    fetch_limit = max(limit * 10, 200)  # Fetch more to ensure we have enough for filtering
 
     if time_period == 'custom':
         if not start_date or not end_date:
@@ -326,30 +327,33 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         start_timestamp = int(start_date_obj.timestamp())
         end_timestamp = int(end_date_obj.timestamp())
 
-        after = None
-        default_time_filter = 'week'  # Fetch posts from the past week initially
+        # Define time periods to iterate over
+        time_filters = ['all', 'year', 'month', 'week', 'day']
 
-        while len(ed_posts) < limit:
-            fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, 100)
+        for default_time_filter in time_filters:
+            after = None
+            while len(ed_posts) < limit:
+                fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, fetch_limit)
 
-            if not fetched_batch:
+                if not fetched_batch:
+                    break
+
+                for post in fetched_batch:
+                    if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp:
+                        ed_posts.append(post)
+                        if len(ed_posts) == limit:
+                            break
+
+                after = fetched_batch[-1].fullname if fetched_batch else None
+
+                if len(fetched_batch) < fetch_limit:
+                    break
+
+            # Further filter the posts to match the exact custom date range
+            ed_posts = [post for post in ed_posts if start_timestamp <= post.created_utc <= end_timestamp]
+            
+            if len(ed_posts) >= limit:
                 break
-
-            for post in fetched_batch:
-                if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp:
-                    ed_posts.append(post)
-                    if len(ed_posts) == limit:
-                        break
-
-            after = fetched_batch[-1].fullname if fetched_batch else None
-
-            # If we have enough posts or cannot fetch more, stop
-            if len(ed_posts) >= limit or len(fetched_batch) < 100:
-                break
-
-        # Further filter the posts to match the exact custom date range
-        ed_posts = [post for post in ed_posts if start_timestamp <= post.created_utc <= end_timestamp]
-
     else:
         after = None
         while len(ed_posts) < limit:
