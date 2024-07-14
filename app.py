@@ -311,10 +311,10 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     if 'episode_id' not in session:
         flash('Please select an episode to work on.', 'warning')
         return redirect(url_for('episodes'))
-    episode_id = session['episode_id']
     
+    episode_id = session['episode_id']
     subreddit = reddit.subreddit(subreddit_name)
-    ed_posts = []
+    searched_posts = []
     fetch_limit = max(limit * 5, 100)  # Fetch more to ensure we have enough for filtering
 
     if time_period == 'custom':
@@ -328,29 +328,27 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
 
-        while len(ed_posts) < limit:
-            fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, fetch_limit)
+        start_timestamp = int(start_date_obj.timestamp())
+        end_timestamp = int(end_date_obj.timestamp())
 
+        while len(searched_posts) < limit:
+            fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, fetch_limit)
             if not fetched_batch:
                 break
 
-            start_timestamp = int(start_date_obj.timestamp())
-            end_timestamp = int(end_date_obj.timestamp())
-
             for post in fetched_batch:
                 if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp:
-                    ed_posts.append(post)
-                    if len(ed_posts) == limit:
+                    searched_posts.append(post)
+                    if len(searched_posts) == limit:
                         break
 
             after = fetched_batch[-1].fullname if fetched_batch else None
-
             if len(fetched_batch) < fetch_limit:
                 break
     else:
         after = None
-        while len(ed_posts) < limit:
-            remaining_limit = min(100, limit - len(ed_posts))
+        while len(searched_posts) < limit:
+            remaining_limit = min(100, limit - len(searched_posts))
             fetched_batch = fetch_posts(subreddit, query, time_period, after, remaining_limit)
 
             if not fetched_batch:
@@ -358,13 +356,13 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
 
             for post in fetched_batch:
                 if is_video_post(post):
-                    ed_posts.append(post)
+                    searched_posts.append(post)
 
             after = fetched_batch[-1].fullname if fetched_batch else None
 
-    link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in ed_posts[:limit]]
-    
-    _data = {
+    link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in searched_posts[:limit]]
+
+    search_data = {
         'id': str(uuid.uuid4()),
         'episode_id': episode_id,
         'user_id': current_user.id,
@@ -374,12 +372,12 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         'start_date': start_date,
         'end_date': end_date,
         'results': link_list,
-        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        'date': datetime.now().strftime('%Y-%m-%d')
     }
-    _history.append(HistoryEntry(**_data))
+    search_history.append(SearchHistoryEntry(**search_data))
     save_history()
 
-    log_activity(current_user.id, 'search_posts', details=f'Subreddit: {subreddit_name}, Query: {query}, Time Period: {time_period}, Results: {len(link_list)} links')
+    log_activity(current_user.id, 'search', details=f'Subreddit: {subreddit_name}, Query: {query}, Time Period: {time_period}, Results: {len(link_list)} links')
 
     return link_list
 
