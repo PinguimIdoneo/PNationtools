@@ -311,8 +311,8 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     if 'episode_id' not in session:
         flash('Please select an episode to work on.', 'warning')
         return redirect(url_for('episodes'))
-    episode_id = session['episode_id']
     
+    episode_id = session['episode_id']
     subreddit = reddit.subreddit(subreddit_name)
     ed_posts = []
     fetch_limit = max(limit * 5, 100)  # Fetch more to ensure we have enough for filtering
@@ -321,21 +321,18 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         if not start_date or not end_date:
             raise ValueError("Custom date range requires both start date and end date.")
 
-        default_time_filter = 'year'
-        after = None
-
         # Parse start_date and end_date strings into datetime objects
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        start_timestamp = int(start_date_obj.timestamp())
+        end_timestamp = int(end_date_obj.timestamp())
 
+        after = None
         while len(ed_posts) < limit:
-            fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, fetch_limit)
-
+            fetched_batch = fetch_posts(subreddit, query, 'all', after, fetch_limit)
+            
             if not fetched_batch:
                 break
-
-            start_timestamp = int(start_date_obj.timestamp())
-            end_timestamp = int(end_date_obj.timestamp())
 
             for post in fetched_batch:
                 if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp:
