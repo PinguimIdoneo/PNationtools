@@ -315,7 +315,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     episode_id = session['episode_id']
     subreddit = reddit.subreddit(subreddit_name)
     ed_posts = []
-    fetch_limit = max(limit * 10, 200)  # Fetch more to ensure we have enough for filtering
+    fetch_limit = max(limit * 20, 500)  # Fetch more to ensure we have enough for filtering
 
     if time_period == 'custom':
         if not start_date or not end_date:
@@ -351,7 +351,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
 
             # Further filter the posts to match the exact custom date range
             ed_posts = [post for post in ed_posts if start_timestamp <= post.created_utc <= end_timestamp]
-            
+
             if len(ed_posts) >= limit:
                 break
     else:
@@ -369,6 +369,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
 
             after = fetched_batch[-1].fullname if fetched_batch else None
 
+    # Further filtering and limiting to ensure the final list meets the limit
     link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in ed_posts[:limit]]
 
     _data = {
