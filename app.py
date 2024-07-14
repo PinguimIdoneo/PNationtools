@@ -311,11 +311,11 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     if 'episode_id' not in session:
         flash('Please select an episode to work on.', 'warning')
         return redirect(url_for('episodes'))
-    
+
     episode_id = session['episode_id']
     subreddit = reddit.subreddit(subreddit_name)
     ed_posts = []
-    fetch_limit = max(limit * 5, 100)  # Fetch more to ensure we have enough for filtering
+    fetch_limit = max(limit * 10, 200)  # Fetch more to ensure we have enough for filtering
 
     if time_period == 'custom':
         if not start_date or not end_date:
@@ -330,7 +330,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         after = None
         while len(ed_posts) < limit:
             fetched_batch = fetch_posts(subreddit, query, 'all', after, fetch_limit)
-            
+
             if not fetched_batch:
                 break
 
@@ -360,7 +360,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
             after = fetched_batch[-1].fullname if fetched_batch else None
 
     link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in ed_posts[:limit]]
-    
+
     _data = {
         'id': str(uuid.uuid4()),
         'episode_id': episode_id,
