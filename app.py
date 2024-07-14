@@ -311,8 +311,8 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     if 'episode_id' not in session:
         flash('Please select an episode to work on.', 'warning')
         return redirect(url_for('episodes'))
-    
     episode_id = session['episode_id']
+    
     subreddit = reddit.subreddit(subreddit_name)
     searched_posts = []
     fetch_limit = max(limit * 5, 100)  # Fetch more to ensure we have enough for filtering
@@ -328,13 +328,14 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
 
-        start_timestamp = int(start_date_obj.timestamp())
-        end_timestamp = int(end_date_obj.timestamp())
-
         while len(searched_posts) < limit:
             fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, fetch_limit)
+
             if not fetched_batch:
                 break
+
+            start_timestamp = int(start_date_obj.timestamp())
+            end_timestamp = int(end_date_obj.timestamp())
 
             for post in fetched_batch:
                 if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp:
@@ -343,6 +344,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
                         break
 
             after = fetched_batch[-1].fullname if fetched_batch else None
+
             if len(fetched_batch) < fetch_limit:
                 break
     else:
@@ -361,7 +363,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
             after = fetched_batch[-1].fullname if fetched_batch else None
 
     link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in searched_posts[:limit]]
-
+    
     search_data = {
         'id': str(uuid.uuid4()),
         'episode_id': episode_id,
@@ -372,7 +374,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
         'start_date': start_date,
         'end_date': end_date,
         'results': link_list,
-        'date': datetime.now().strftime('%Y-%m-%d')
+        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     search_history.append(SearchHistoryEntry(**search_data))
     save_history()
