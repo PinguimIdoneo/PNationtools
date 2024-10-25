@@ -394,7 +394,7 @@ def search_posts(subreddit_name, query, time_period=None, start_date=None, end_d
     filtered_posts = ed_posts[:limit]
 
     # Extract titles and URLs for output
-    link_list = [(post.title, f"https://www.reddit.com{post.permalink}", post.score) for post in filtered_posts]
+    link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in filtered_posts]
 
     # Save history and log
     _data = {
