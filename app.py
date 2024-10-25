@@ -309,7 +309,7 @@ def get_episode_names():
 
 import time
 
-def search_posts(subreddit_name, query, start_date=None, end_date=None, limit=300):
+def search_posts(subreddit_name, query, time_period, start_date=None, end_date=None, limit=10):
     if 'episode_id' not in session:
         flash('Please select an episode to work on.', 'warning')
         return redirect(url_for('episodes'))
@@ -317,59 +317,70 @@ def search_posts(subreddit_name, query, start_date=None, end_date=None, limit=30
     episode_id = session['episode_id']
     subreddit = reddit.subreddit(subreddit_name)
     ed_posts = []
-    fetch_limit = 100  # Reddit API maximum per request
+    fetch_limit = max(limit * 20, 500)  # Fetch more to ensure we have enough for filtering
 
-    # Ensure start and end dates are provided for custom date range
-    if not start_date or not end_date:
-        raise ValueError("A start date and end date are required.")
+    if time_period == 'custom':
+        if not start_date or not end_date:
+            raise ValueError("Custom date range requires both start date and end date.")
 
-    # Parse start_date and end_date strings into datetime objects
-    start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-    end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-    start_timestamp = int(start_date_obj.timestamp())
-    end_timestamp = int(end_date_obj.timestamp())
+        # Parse start_date and end_date strings into datetime objects
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        start_timestamp = int(start_date_obj.timestamp())
+        end_timestamp = int(end_date_obj.timestamp())
 
-    after = None  # Initialize for pagination
+        # Define time periods to iterate over
+        time_filters = ['all', 'year', 'month', 'week', 'day']
 
-    # Collect posts until the limit is reached
-    while len(ed_posts) < limit:
-        fetched_batch = fetch_posts(subreddit, query, 'all', after, fetch_limit)
-        
-        # Stop if no more posts are returned
-        if not fetched_batch:
-            break
+        for default_time_filter in time_filters:
+            after = None
+            while len(ed_posts) < limit:
+                fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, fetch_limit)
 
-        # Add all posts to ed_posts, filtering after fetching
-        ed_posts.extend(fetched_batch)
-        after = fetched_batch[-1].fullname if fetched_batch else None  # Get the after token
+                if not fetched_batch:
+                    break
 
-        # Break if fewer posts returned than the fetch limit, indicating no more results
-        if len(fetched_batch) < fetch_limit:
-            break
+                for post in fetched_batch:
+                    if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp:
+                        ed_posts.append(post)
+                        if len(ed_posts) == limit:
+                            break
 
-        # Optional: add delay if API throttling occurs
-        time.sleep(1)
+                after = fetched_batch[-1].fullname if fetched_batch else None
 
-    # Filter posts after fetching all available data
-    filtered_posts = [
-        post for post in ed_posts
-        if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp
-    ]
+                if len(fetched_batch) < fetch_limit:
+                    break
 
-    # Limit results to requested amount
-    filtered_posts = filtered_posts[:limit]
+            # Further filter the posts to match the exact custom date range
+            ed_posts = [post for post in ed_posts if start_timestamp <= post.created_utc <= end_timestamp]
 
-    # Extract titles and URLs for output
-    link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in filtered_posts]
+            if len(ed_posts) >= limit:
+                break
+    else:
+        after = None
+        while len(ed_posts) < limit:
+            remaining_limit = min(100, limit - len(ed_posts))
+            fetched_batch = fetch_posts(subreddit, query, time_period, after, remaining_limit)
 
-    # Save history and log
+            if not fetched_batch:
+                break
+
+            for post in fetched_batch:
+                if is_video_post(post):
+                    ed_posts.append(post)
+
+            after = fetched_batch[-1].fullname if fetched_batch else None
+
+    # Further filtering and limiting to ensure the final list meets the limit
+    link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in ed_posts[:limit]]
+
     _data = {
         'id': str(uuid.uuid4()),
         'episode_id': episode_id,
         'user_id': current_user.id,
         'subreddit': subreddit_name,
         'query': query,
-        'time_period': 'all',
+        'time_period': time_period,
         'start_date': start_date,
         'end_date': end_date,
         'results': link_list,
@@ -378,7 +389,7 @@ def search_posts(subreddit_name, query, start_date=None, end_date=None, limit=30
     _history.append(HistoryEntry(**_data))
     save_history()
 
-    log_activity(current_user.id, 'search_posts', details=f'Subreddit: {subreddit_name}, Query: {query}, Date Range: {start_date} to {end_date}, Results: {len(link_list)} links')
+    log_activity(current_user.id, 'search_posts', details=f'Subreddit: {subreddit_name}, Query: {query}, Time Period: {time_period}, Results: {len(link_list)} links')
 
     return link_list
   
