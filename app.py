@@ -307,6 +307,36 @@ def get_episode_names():
     episodes = Episode.query.all()
     return {ep.id: ep.name for ep in episodes}
 
+import requests
+
+def fetch_posts_with_pushshift(subreddit, query, start_date, end_date, limit=100):
+    start_timestamp = int(datetime.strptime(start_date, "%Y-%m-%d").timestamp())
+    end_timestamp = int(datetime.strptime(end_date, "%Y-%m-%d").timestamp())
+
+    # Pushshift API endpoint
+    url = (
+        f"https://api.pushshift.io/reddit/search/submission/"
+        f"?subreddit={subreddit}&after={start_timestamp}&before={end_timestamp}&size={limit}"
+    )
+    
+    # Add query filter if provided
+    if query:
+        url += f"&q={query}"
+
+    response = requests.get(url)
+    data = response.json()
+
+    # Parse response
+    posts = []
+    for post in data.get('data', []):
+        title = post.get('title')
+        permalink = f"https://www.reddit.com{post.get('permalink')}"
+        score = post.get('score', 0)
+        posts.append((title, permalink, score))
+
+    return posts
+
+
 import time
 
 import time
@@ -319,46 +349,17 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     episode_id = session['episode_id']
     subreddit = reddit.subreddit(subreddit_name)
     ed_posts = []
-    fetch_limit = max(limit * 20, 500)  # Fetch more to ensure we have enough for filtering
 
     if time_period == 'custom':
+        # Check for required date range in custom mode
         if not start_date or not end_date:
             raise ValueError("Custom date range requires both start date and end date.")
 
-        # Parse start_date and end_date strings into datetime objects
-        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
-        start_timestamp = int(start_date_obj.timestamp())
-        end_timestamp = int(end_date_obj.timestamp())
-
-        # Define time periods to iterate over
-        time_filters = ['all', 'year', 'month', 'week', 'day']
-
-        for default_time_filter in time_filters:
-            after = None
-            while len(ed_posts) < limit:
-                fetched_batch = fetch_posts(subreddit, query, default_time_filter, after, fetch_limit)
-
-                if not fetched_batch:
-                    break
-
-                for post in fetched_batch:
-                    if is_video_post(post) and start_timestamp <= post.created_utc <= end_timestamp:
-                        ed_posts.append(post)
-                        if len(ed_posts) == limit:
-                            break
-
-                after = fetched_batch[-1].fullname if fetched_batch else None
-
-                if len(fetched_batch) < fetch_limit:
-                    break
-
-            # Further filter the posts to match the exact custom date range
-            ed_posts = [post for post in ed_posts if start_timestamp <= post.created_utc <= end_timestamp]
-
-            if len(ed_posts) >= limit:
-                break
+        # Fetch posts using Pushshift for custom date range
+        ed_posts = fetch_posts_with_pushshift(subreddit_name, query, start_date, end_date, limit=limit)
+    
     else:
+        # Standard time period fetching with Reddit API
         after = None
         while len(ed_posts) < limit:
             remaining_limit = min(100, limit - len(ed_posts))
@@ -373,9 +374,10 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
 
             after = fetched_batch[-1].fullname if fetched_batch else None
 
-    # Further filtering and limiting to ensure the final list meets the limit
-    link_list = [(post.title, f"https://www.reddit.com{post.permalink}") for post in ed_posts[:limit]]
+    # Create link list for output
+    link_list = [(post[0], post[1]) for post in ed_posts[:limit]]
 
+    # Save history and log
     _data = {
         'id': str(uuid.uuid4()),
         'episode_id': episode_id,
@@ -394,6 +396,7 @@ def search_posts(subreddit_name, query, time_period, start_date=None, end_date=N
     log_activity(current_user.id, 'search_posts', details=f'Subreddit: {subreddit_name}, Query: {query}, Time Period: {time_period}, Results: {len(link_list)} links')
 
     return link_list
+
   
 @app.route('/search_posts', methods=['GET', 'POST'])
 @login_required
