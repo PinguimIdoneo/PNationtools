@@ -411,7 +411,7 @@ def search_posts(subreddit_name, query, start_date=None, end_date=None, limit=30
     _history.append(HistoryEntry(**_data))
     save_history()
 
-    log_activity(current_user.id, 'search_posts', details=f'Subreddit: {subreddit_name}, Query: {query}, Date Range: {start_date} to {end_date}, Results: {len(link_list)} links, Sorted by upvotes")
+    log_activity(current_user.id, 'search_posts', details=f"Subreddit: {subreddit_name}, Query: {query}, Date Range: {start_date} to {end_date}, Results: {len(link_list)} links, Sorted by upvotes")
 
     return link_list
   
