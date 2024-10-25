@@ -311,7 +311,8 @@ import time
 
 import time
 
-def search_posts(subreddit_name, query, start_date=None, end_date=None, limit=300):
+def search_posts(subreddit_name, query, time_period=None, start_date=None, end_date=None, limit=300):
+
     if 'episode_id' not in session:
         flash('Please select an episode to work on.', 'warning')
         return redirect(url_for('episodes'))
