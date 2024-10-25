@@ -53,7 +53,12 @@
     <div class="container">
         <h1>Credit Generator for {{ episode.name }}</h1>
         <form id="credits-form" method="POST" action="{{ url_for('credits_generator') }}" onsubmit="generateUsernames(event)">
-            <textarea name="input_text" rows="10" cols="50" placeholder="Paste the timeline text here..."></textarea><br>
+            <label for="clip_links">Clip Links (one per line):</label>
+            <textarea name="clip_links" rows="10" cols="50" placeholder="Paste each clip link on a new line"></textarea><br>
+            
+            <label for="timeline">Timeline (one per line):</label>
+            <textarea name="timeline" rows="10" cols="50" placeholder="Enter each timestamp on a new line, matching the clip links"></textarea><br>
+            
             <button type="submit">Generate Usernames</button>
             <a href="{{ url_for('dashboard') }}">Return to Dashboard</a>
         </form>
