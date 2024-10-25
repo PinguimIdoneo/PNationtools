@@ -493,45 +493,33 @@ def credits_generator():
 
     episode_id = session['episode_id']
     episode = Episode.query.get_or_404(episode_id)
-    
     usernames = []
+
     if request.method == 'POST':
-        input_text = request.form.get('input_text', '')
-        print(f"Received input text: {input_text}")  # Debug statement
-        clip_names = extract_clip_names(input_text)
-        print(f"Extracted clip names: {clip_names}")  # Debug statement
-        usernames = generate_credits(clip_names)
-        print(f"Generated usernames: {usernames}")  # Debug statement
+        clip_links = request.form.get('clip_links', '').splitlines()  # Each link on a new line
+        timeline = request.form.get('timeline', '').splitlines()  # Each timestamp on a new line
+
+        if len(clip_links) != len(timeline):
+            flash("The number of clips and timeline entries must match.", 'danger')
+            return redirect(url_for('credits_generator'))
+
+        usernames = generate_credits(clip_links)
     
     return render_template('credits_generator.html', usernames=usernames, episode=episode)
 
-def extract_clip_names(input_text):
-    lines = input_text.split('\n')
-    clip_names = []
-    for line in lines:
-        if '* FROM CLIP NAME:' in line:
-            clip_name = line.split('* FROM CLIP NAME:')[-1].strip().replace('.mp4', '')
-            clip_name = clean_text(clip_name)  # Clean the clip name
-            clip_names.append(clip_name)
-    return clip_names
 
-def generate_credits(clip_names):
+def generate_credits(clip_links):
     matching_usernames = []
-    for clip_name in clip_names:
-        found_usernames = find_usernames_for_clip(clip_name)
+    for link in clip_links:
+        found_usernames = find_usernames_for_clip(link)
         matching_usernames.append(found_usernames[0] if found_usernames else 'No match')
     return matching_usernames
 
-def find_usernames_for_clip(clip_name):
-    matched_usernames = []
-    for entry in _history:
-        for title, link in entry.results:
-            cleaned_title = clean_text(title)  # Clean the title
-            if clip_name.lower() in cleaned_title.lower():  # Case-insensitive match
-                usernames = extract_usernames_from_link(link)
-                if usernames:
-                    matched_usernames.extend(usernames)
-    return matched_usernames
+
+def find_usernames_for_clip(link):
+    matched_usernames = extract_usernames_from_link(link)
+    return matched_usernames if matched_usernames else []
+
 
 def extract_usernames_from_link(link):
     try:
@@ -543,11 +531,11 @@ def extract_usernames_from_link(link):
         print(f"Error extracting username from link {link}: {e}")
         return []
 
-def clean_text(text):
-    # Remove special characters and normalize
-    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
-    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
-    return text.strip()
+
+@app.route('/credits_generator.html')
+# Include two input boxes: one for the clip links and another for the timeline
+# This should be in your HTML template for credits_generator.
+
 
 @app.route('/matching_tool')
 @login_required
