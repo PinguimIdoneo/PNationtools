@@ -484,6 +484,11 @@ def copy_links(history_id):
         return jsonify({"links": links})
     return jsonify({"links": ""})
 
+from flask import request, flash, redirect, url_for, render_template, session
+from flask_login import login_required
+import re
+import unicodedata
+
 @app.route('/credits_generator', methods=['GET', 'POST'])
 @login_required
 def credits_generator():
@@ -493,16 +498,23 @@ def credits_generator():
 
     episode_id = session['episode_id']
     episode = Episode.query.get_or_404(episode_id)
-    
+
     usernames = []
     if request.method == 'POST':
         input_text = request.form.get('input_text', '')
-        print(f"Received input text: {input_text}")  # Debug statement
+        clip_links_text = request.form.get('clip_links', '')
+
+        edl_file = request.files.get('edl_file')
+        if edl_file and edl_file.filename.endswith('.edl'):
+            input_text = edl_file.read().decode('utf-8')
+
         clip_names = extract_clip_names(input_text)
-        print(f"Extracted clip names: {clip_names}")  # Debug statement
-        usernames = generate_credits(clip_names)
-        print(f"Generated usernames: {usernames}")  # Debug statement
-    
+
+        raw_links = clip_links_text.strip().splitlines()
+        links = [(extract_clip_title_from_url(url), url.strip()) for url in raw_links if url.strip()]
+
+        usernames = generate_credits(clip_names, links)
+
     return render_template('credits_generator.html', usernames=usernames, episode=episode)
 
 def extract_clip_names(input_text):
@@ -511,40 +523,47 @@ def extract_clip_names(input_text):
     for line in lines:
         if '* FROM CLIP NAME:' in line:
             clip_name = line.split('* FROM CLIP NAME:')[-1].strip().replace('.mp4', '')
-            clip_name = clean_text(clip_name)  # Clean the clip name
+            clip_name = clean_text(clip_name)
             clip_names.append(clip_name)
     return clip_names
 
-def generate_credits(clip_names):
+def generate_credits(clip_names, link_list):
     matching_usernames = []
     for clip_name in clip_names:
-        found_usernames = find_usernames_for_clip(clip_name)
+        found_usernames = find_usernames_for_clip(clip_name, link_list)
         matching_usernames.append(found_usernames[0] if found_usernames else 'No match')
     return matching_usernames
 
-def find_usernames_for_clip(clip_name):
+def find_usernames_for_clip(clip_name, link_list):
     matched_usernames = []
-    for entry in _history:
-        for title, link in entry.results:
-            cleaned_title = clean_text(title)  # Clean the title
-            if clip_name.lower() in cleaned_title.lower():  # Case-insensitive match
-                usernames = extract_usernames_from_link(link)
-                if usernames:
-                    matched_usernames.extend(usernames)
+    for title, link in link_list:
+        cleaned_title = clean_text(title)
+        if clip_name.lower() in cleaned_title.lower():
+            usernames = extract_usernames_from_link(link)
+            if usernames:
+                matched_usernames.extend(usernames)
     return matched_usernames
 
 def extract_usernames_from_link(link):
     try:
-        submission_id = link.split('/')[-3]
-        submission = reddit.submission(submission_id)
-        username = submission.author.name if submission.author else None
-        return [username] if username else []
+        if 'reddit.com' in link:
+            submission_id = link.split('/')[-3]
+            submission = reddit.submission(submission_id)
+            username = submission.author.name if submission.author else None
+            return [username] if username else []
+        elif 'twitch.tv' in link:
+            # Placeholder: Replace with Twitch API call or parsing logic
+            return ['twitch_user_placeholder']
+        else:
+            return []
     except Exception as e:
         print(f"Error extracting username from link {link}: {e}")
         return []
 
+def extract_clip_title_from_url(url):
+    return url.split('/')[-1].split('?')[0].replace('-', ' ').replace('_', ' ')
+
 def clean_text(text):
-    # Remove special characters and normalize
     text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
     text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
     return text.strip()
