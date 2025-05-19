@@ -17,7 +17,7 @@ itsdangerous==2.2.0
 Jinja2==3.1.4
 MarkupSafe==2.1.5
 packaging==24.1
-praw==7.7.1
+praw==7.8.1                # Update to latest stable version
 prawcore==2.4.0
 python-dotenv==1.0.1
 requests==2.32.3
@@ -27,4 +27,5 @@ update-checker==0.18.0
 urllib3==2.2.2
 websocket-client==1.8.0
 Werkzeug==3.0.3
-psycopg2==2.9.7  # Replace psycopg2-binary with psycopg2
+psycopg2==2.9.7
+beautifulsoup4==4.12.2     # Add this package for bs4
