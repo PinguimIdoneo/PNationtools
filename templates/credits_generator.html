@@ -12,7 +12,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             overflow: hidden;
-            display: none; /* Hidden by default */
+            display: none;
         }
 
         .progress-bar-inner {
@@ -44,8 +44,19 @@
         function generateUsernames(event) {
             event.preventDefault();
             showProgressBar();
-            var form = document.getElementById('credits-form');
-            form.submit();
+            document.getElementById('credits-form').submit();
+        }
+
+        function copyUsernamesToClipboard() {
+            let text = "";
+            {% for username in usernames %}
+                text += "{{ username }}\n";
+            {% endfor %}
+            navigator.clipboard.writeText(text).then(function () {
+                alert('Usernames copied to clipboard!');
+            }, function (err) {
+                console.error('Could not copy text: ', err);
+            });
         }
     </script>
 </head>
@@ -53,13 +64,20 @@
     <div class="container">
         <h1>Credit Generator for {{ episode.name }}</h1>
         <form id="credits-form" method="POST" action="{{ url_for('credits_generator') }}" onsubmit="generateUsernames(event)">
-            <textarea name="input_text" rows="10" cols="50" placeholder="Paste the timeline text here..."></textarea><br>
+            <label for="input_text">EDL or Timeline Export:</label><br>
+            <textarea name="input_text" id="input_text" rows="10" cols="80" placeholder="Paste the timeline/EDL export here..." required></textarea><br><br>
+
+            <label for="clip_links">Reddit/Twitch Clip Links:</label><br>
+            <textarea name="clip_links" id="clip_links" rows="10" cols="80" placeholder="Paste the Reddit/Twitch links here..." required></textarea><br><br>
+
             <button type="submit">Generate Usernames</button>
             <a href="{{ url_for('dashboard') }}">Return to Dashboard</a>
         </form>
+
         <div class="progress-bar" id="progress-bar">
             <div class="progress-bar-inner" id="progress-bar-inner">0%</div>
         </div>
+
         {% if usernames %}
             <h2>Generated Usernames</h2>
             <button onclick="copyUsernamesToClipboard()">Copy Usernames to Clipboard</button>
@@ -70,18 +88,5 @@
             </ul>
         {% endif %}
     </div>
-    <script>
-        function copyUsernamesToClipboard() {
-            var text = "";
-            {% for username in usernames %}
-                text += "{{ username }}\n";
-            {% endfor %}
-            navigator.clipboard.writeText(text).then(function() {
-                alert('Usernames copied to clipboard!');
-            }, function(err) {
-                console.error('Could not copy text: ', err);
-            });
-        }
-    </script>
 </body>
 </html>
